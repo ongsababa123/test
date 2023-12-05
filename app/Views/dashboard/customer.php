@@ -228,14 +228,15 @@
                         Swal.fire({
                             title: response.message,
                             icon: 'success',
-                            showConfirmButton: false,
+                            showConfirmButton: true,
                             allowOutsideClick: false
-                        });
-                        setTimeout(() => {
-                            if (response.reload) {
+                        }).then((result) => {
+                            // Check if the user clicked the confirm button
+                            if (result.isConfirmed) {
+                                // Redirect to the login page, you may need to adjust the URL
                                 window.location.reload();
                             }
-                        }, 2000);
+                        });
                     } else {
                         if (response.validator) {
                             var mes = "";
