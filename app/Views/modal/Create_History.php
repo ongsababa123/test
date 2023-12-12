@@ -17,6 +17,8 @@
                             required onchange="change()">
                         </select>
                     </div>
+                    <br>
+                    <h6 id="count_book">จำนวน</h6>
                 </div>
                 <div class="form-group">
                     <label>ชื่อผู้ยืม</label>
@@ -44,11 +46,11 @@
                     <div class="col-sm-6">
                         <div class="form-group">
                             <label>วันที่ต้องคืน</label>
-                            <div class="input-group date" id="return_date__crate" data-target-input="nearest">
+                            <div class="input-group date" id="return_date_create" data-target-input="nearest">
                                 <input type="text" class="form-control datetimepicker-input gray-text"
-                                    data-target="#return_date__crate" name="return_date_create" id="return_date_create"
+                                    data-target="#return_date_create" name="return_date_create" id="return_date_create"
                                     required />
-                                <div class="input-group-append" data-target="#return_date__crate"
+                                <div class="input-group-append" data-target="#return_date_create"
                                     data-toggle="datetimepicker">
                                     <div class="input-group-text"><i class="fa fa-calendar"></i></div>
                                 </div>
@@ -59,8 +61,13 @@
                 <div class="row">
                     <div class="col-sm-6">
                         <div class="form-group">
-                            <label>ส่วนลดโปรโมชั่น</label>
+                            <label>รายละเอียดโปรโมชั่น</label>
                             <p id="details_promotion"></p>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label>ส่วนลดโปรโมชั่น</label>
                             <input type="text" class="form-control" placeholder="โปรโมชั่น" id="promotion_book"
                                 name="promotion_book" disabled>
                         </div>
@@ -72,6 +79,13 @@
                             <label>ราคาหนังสือ(ยอดรวม)</label>
                             <input type="text" class="form-control" placeholder="ราคาเช่า(รวม)" id="price_book_"
                                 name="price_book_" disabled>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label>ราคาหนังสือ(หักส่วนลด)</label>
+                            <input type="text" class="form-control" placeholder="ราคาหักส่วนลด"
+                                id="price_book_promotion" name="price_book_promotion" disabled>
                         </div>
                     </div>
                 </div>
@@ -96,17 +110,46 @@
     $("#form_create_history").on('submit', function (e) {
         e.preventDefault();
         const urlRouteInput = document.getElementById("url_route");
-        action_(urlRouteInput.value, 'form_create_history');
+        if ($(".modal-body #name_book_create").val().length > '7') {
+            Swal.fire({
+                title: "การเช่าหนังสือสามารถเช่าได้แค่ 7 เล่มต่อครั้ง",
+                icon: 'error',
+                showConfirmButton: true
+            });
+        } else {
+            action_(urlRouteInput.value, 'form_create_history');
+        }
     });
 </script>
 <script>
+
     $(function () {
-        //Date picker
-        $('#return_date__crate').datetimepicker({
+        var today = moment();
+        var formattedReturnDate = null;
+        $('#return_date_create').datetimepicker({
             format: 'YYYY-MM-DD',
+            minDate: formattedReturnDate,
         });
         $('#rental_date__create').datetimepicker({
             format: 'YYYY-MM-DD',
+            minDate: today,
+        });
+        $('.modal-body #return_date_create').prop("disabled", true);
+
+        $('#rental_date__create').on('change.datetimepicker', function (e) {
+            var rentalDate = e.date;
+            var returnDate = rentalDate.clone().add(7, 'days');
+            formattedReturnDate = returnDate.format('YYYY-MM-DD');
+
+            // Destroy and reinitialize datetimepicker for return_date_create
+            $('#return_date_create').datetimepicker('destroy');
+            $('#return_date_create').datetimepicker({
+                format: 'YYYY-MM-DD',
+                minDate: formattedReturnDate,
+            });
+            $('.modal-body #return_date_create').prop("disabled", false);
+
+            $(".modal-body #return_date_create").val(formattedReturnDate);
         });
     })
 </script>
@@ -123,8 +166,11 @@
 </script>
 <script>
     var data_book = <?php echo json_encode($data_book); ?>;
-
+    $(".modal-body #price_book_promotion").val("ไม่มีโปรโมชั่น");
+    $(".modal-body #details_promotion").val("ไม่มีโปรโมชั่น");
+    $(".modal-body #promotion_book").val("ไม่มีโปรโมชั่น");
     function change() {
+    
         var selectedid_book = [];
         let price__ = 0;
         var selectElement = document.getElementById("name_book_create");
@@ -136,16 +182,23 @@
                 price__ = price__ + parseInt(book__mat.price);
             }
         }
-
+        $(".modal-body #count_book").html("จำนวน " + selectedid_book.length + " เล่ม");
         check_promotion(id_user, selectedid_book, price__, function (result) {
-            $(".modal-body #details_promotion").html(result.text);
-            $(".modal-body #promotion_book").val(result.price_promotion);
             $(".modal-body #sum_price_promotion").val(result.price_promotion);
 
             $(".modal-body #sumid_promotion").val(result.sumid_promotion);
 
             $(".modal-body #price_book_create").val(result.price_result);
             $(".modal-body #price_book_").val(result.price_result);
+            if (result.price_promotion == 0) {
+                $(".modal-body #price_book_promotion").val("ไม่มีโปรโมชั่น");
+                $(".modal-body #details_promotion").val("ไม่มีโปรโมชั่น");
+                $(".modal-body #promotion_book").val("ไม่มีโปรโมชั่น");
+            } else {
+                $(".modal-body #price_book_promotion").val(parseInt(result.price_result) - parseInt(result.price_promotion));
+                $(".modal-body #details_promotion").html(result.text);
+                $(".modal-body #promotion_book").val(result.price_promotion);
+            }
         });
 
     }

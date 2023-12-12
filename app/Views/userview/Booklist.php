@@ -261,6 +261,13 @@ $filteredBooks = array_filter($bookData, function ($book) use ($searchTerm) {
                 icon: 'warning',
                 showConfirmButton: true
             });
+        
+        }else if(userData[0]['status_user'] == 2){
+            Swal.fire({
+                title: "คุณกำลังเช่าหนังสืออยู่ โปรดคืนหนังสือก่อนเช่าใหม่อีกครั้ง",
+                icon: 'warning',
+                showConfirmButton: true
+            });
         } else {
             $.ajax({
                 url: '<?= base_url('book/booklist/addcart/') ?>' + id_book,
@@ -279,14 +286,20 @@ $filteredBooks = array_filter($bookData, function ($book) use ($searchTerm) {
                         timer: 3000,
                         timerProgressBar: true,
                         didOpen: (toast) => {
-                            toast.onmouseenter = Swal.stopTimer;
                             toast.onmouseleave = Swal.resumeTimer;
+
+                            toast.addEventListener('click', () => {
+                                // Navigate to the desired URL
+                                window.location.href = "<?= site_url('/cart') ?>";
+                            });
                         }
                     });
+
                     Toast.fire({
                         icon: "success",
                         title: response.message
                     });
+
                 },
                 error: function (xhr, status, error) {
                     Swal.fire({

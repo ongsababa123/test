@@ -4,13 +4,15 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AdminLTE 3 | Invoice Print</title>
+    <title>ใบเสร็จ</title>
     <!-- Google Font: Source Sans Pro -->
     <link rel="stylesheet" href="<?= base_url('dist/css/fontsgoogle.css'); ?>">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="<?= base_url('plugins/fontawesome-free/css/all.min.css'); ?>">
     <!-- Theme style -->
     <link rel="stylesheet" href="<?= base_url('dist/css/adminlte.min.css'); ?>">
+    <link rel="icon" href="<?=base_url('dist/img/icon/favicon.ico')?>" type="image/gif">
+
 </head>
 <style>
     * {
@@ -144,7 +146,7 @@ $pice_total = 0;
                             <tr>
                                 <th style="width:50%">ราคารวม:</th>
                                 <td>
-                                    <?= $pice_total ?>
+                                    <?= $data_history[0]['sum_price'] ?>
                                 </td>
                             </tr>
                             <tr>
@@ -161,16 +163,21 @@ $pice_total = 0;
                                 <th>ส่วนลดโปรโมชั่น</th>
                                 <td>
                                     <?php if ($data_history[0]['id_promotion'] === null): ?>
-                                        ไม่มีส่วนลด
+                                        <?php if ($data_history[0]['sum_price_promotion'] === null || $data_history[0]['sum_price_promotion'] === '0'): ?>
+                                            ไม่มีส่วนลด
+                                        <?php else: ?>
+                                            <?= $data_history[0]['sum_price_promotion'] ?>
+                                        <?php endif; ?>
                                     <?php else: ?>
                                         <?= $data_history[0]['sum_price_promotion'] ?>
                                     <?php endif; ?>
+
                                 </td>
                             </tr>
                             <tr>
                                 <th>ยอดรวม:</th>
                                 <td>
-                                    <?= $data_history[0]['sum_price'] + $data_history[0]['late_price'] ?>
+                                    <?= ($data_history[0]['sum_price'] + $data_history[0]['late_price']) - $data_history[0]['sum_price_promotion'] ?>
                                 </td>
                             </tr>
                         </table>

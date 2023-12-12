@@ -1,4 +1,4 @@
-<title>History Table</title>
+<title>ประวัติการเช่า</title>
 <link rel="stylesheet" href="<?= base_url('plugins/ekko-lightbox/ekko-lightbox.css'); ?>">
 <!-- daterange picker -->
 <link rel="stylesheet" href="<?= base_url('plugins/daterangepicker/daterangepicker.css'); ?>">
@@ -36,7 +36,7 @@
                     </div>
                     <div class="col-sm-6">
                         <ol class="breadcrumb float-sm-right">
-                            <li class="breadcrumb-item"><a href="<?= site_url('/'); ?>">หน้าหลัก</a></li>
+                        <li class="breadcrumb-item"><a href="<?= site_url('/dashboard/index'); ?>">หน้าหลัก</a></li>
                             <li class="breadcrumb-item active">ประวัติการเช่า</li>
                         </ol>
                     </div>
@@ -100,7 +100,7 @@
             <?= $this->include("modal/Create_History"); ?>
         </div>
     </div>
-    <?= $this->include("Check_pro"); ?>
+    <?= $this->include("calculate"); ?>
     <!-- InputMask -->
     <script src="<?= base_url('plugins/moment/moment.min.js'); ?>"></script>
     <!-- date-range-picker -->
@@ -141,7 +141,7 @@
                 });
 
                 data_user.forEach(element_user_cr => {
-                    if (element_user_cr.status_user == 1) {
+                    if (element_user_cr.status_user == 1 && element_user_cr.type_user == 4) {
                         var newOption = $('<option>').val(element_user_cr.id_user).text(element_user_cr.name + ' ' + element_user_cr.lastname);
                         $(".modal-body #name_user_create").append(newOption);
                     }
@@ -151,6 +151,9 @@
                 $(".modal-footer #submit").text("สร้างข้อมูลเช่าหนังสือ");
                 $(".modal-body #url_route").val("dashboard/history/create");
             } else if (load_check == 2) {
+
+                $(".modal-header #title_modal").text("แก้ไขข้อมูลประวัติ");
+                $(".modal-footer #submit").text("แก้ไขข้อมูลประวัติ");
                 $("#formContainer").empty();
                 $("#formImageContainer").empty();
                 Read_History.style.display = "block";
@@ -213,29 +216,40 @@
                 $(".modal-body #rental_date").val(rowData.rental_date);
                 $(".modal-body #return_date").val(rowData.return_date);
                 $(".modal-body #price_book").val(rowData.sum_price);
-
+                var rental_date = moment(rowData.rental_date, 'YYYY-MM-DD');
+                var minDate = rental_date.add(7, 'days');
+                $('#return_date__').datetimepicker({
+                    format: 'YYYY-MM-DD',
+                    minDate: minDate,
+                });
                 var today = new Date(); // Get the current date
                 today.setHours(0, 0, 0, 0)
                 var returnDate = new Date(rowData.return_date);
                 returnDate.setHours(0, 0, 0, 0); // Set hours, minutes, seconds, and milliseconds to 0
                 if (rowData.submit_date == null) {
-                    $(".modal-footer #submit").prop("disabled", false);
-                    $(".modal-body #return_date").prop("disabled", false);
-                    $(".modal-body #submit_date").val("ยังไม่มีการคืน");
-                    $(".modal-body #pice_promotion").prop("disabled", false);
-                    $(".modal-body #price_late").prop("disabled", false);
-                    if (today > returnDate) {
-                        var returnDate = new Date(rowData.return_date);
-                        var currentDate = new Date();
-                        // หาความแตกต่างในวัน
-                        var timeDifference = currentDate.getTime() - returnDate.getTime();
-                        var daysDifference = Math.ceil((timeDifference / (1000 * 60 * 60 * 24)) - 1);
-                        var price_fees = data_latefees[0]['price_fees'];
-                        $(".modal-body #price_late").val(daysDifference * price_fees);
+                    $(".modal-body #print").hide();
+
+                    if (rowData.late_price === '0' || rowData.late_price == null) {
+                        $(".modal-footer #submit").prop("disabled", false);
+                        $(".modal-body #return_date").prop("disabled", false);
+                        $(".modal-body #submit_date").val("ยังไม่มีการคืน");
+                        $(".modal-body #pice_promotion").prop("disabled", false);
+                        $(".modal-body #price_late").prop("disabled", false);
+                        if (today > returnDate) {
+
+                            var price_fees = data_latefees[0]['price_fees'];
+                            calculate_price_late(idbook.length, price_fees, returnDate, function (result_price) {
+                                $(".modal-body #price_late").val(result_price);
+                            });
+                        } else {
+                            $(".modal-body #price_late").val("ไม่มีค่าปรับ");
+                        }
                     } else {
-                        $(".modal-body #price_late").val("ไม่มีค่าปรับ");
+                        $(".modal-body #price_late").val(rowData.late_price);
                     }
+
                 } else {
+                    $(".modal-body #print").show();
                     $(".modal-footer #submit").prop("disabled", true);
                     $(".modal-body #return_date").prop("disabled", true);
                     $(".modal-body #pice_promotion").prop("disabled", true);
@@ -247,11 +261,17 @@
                         $(".modal-body #price_late").val(rowData.late_price);
                     }
                 }
-                $(".modal-header #title_modal").text("แก้ไขข้อมูลประวัติ");
-                $(".modal-footer #submit").text("แก้ไขข้อมูลประวัติ");
-                $(".modal-body #url_route").val("dashboard/history/edit/return_date/" + rowData.id_history);
+                var priceBook = parseInt($(".modal-body #price_book").val()) || 0;
+                var priceLate = parseInt($(".modal-body #price_late").val()) || 0;
+                var promotionPrice = parseInt($(".modal-body #pice_promotion").val()) || 0;
+                var sumPriceAll = priceBook + priceLate - promotionPrice;
+                $(".modal-body #sum_price_all").val(sumPriceAll);
+                
+                $(".modal-body #url_route").val("dashboard/history/edit/edit_history/" + rowData.id_history);
                 $(".modal-body #print").prop("href", "billview/" + rowData.id_history);
+
             }
+
         }
     </script>
     <script>
@@ -431,16 +451,20 @@
                                     `;
                             } else if (data.status_his === '2') {
                                 if (data.submit_date == null) {
-                                    if (today > returnDate) {
-                                        var returnDate = new Date(data.return_date);
-                                        var currentDate = new Date();
-                                        // หาความแตกต่างในวัน
-                                        var timeDifference = currentDate.getTime() - returnDate.getTime();
-                                        var daysDifference = Math.ceil((timeDifference / (1000 * 60 * 60 * 24)) - 1);
-                                        var price_fees = data_latefees[0]['price_fees'];
-                                        var price_fess_totel = daysDifference * price_fees;
+                                    if (data.late_price != null) {
+                                        var price_fess_totel = data.late_price;
                                     } else {
-                                        var price_fess_totel = 0;
+                                        if (today > returnDate) {
+                                            var returnDate = new Date(data.return_date);
+                                            var currentDate = new Date();
+                                            // หาความแตกต่างในวัน
+                                            var timeDifference = currentDate.getTime() - returnDate.getTime();
+                                            var daysDifference = Math.ceil((timeDifference / (1000 * 60 * 60 * 24)) - 1);
+                                            var price_fees = data_latefees[0]['price_fees'];
+                                            var price_fess_totel = daysDifference * price_fees;
+                                        } else {
+                                            var price_fess_totel = 0;
+                                        }
                                     }
                                     return `<button type="button" class="btn btn-info" data-toggle="modal" data-target="#modal-default" onclick="load_modal(2,'${encodedRowData}')"><i class="fas fa-info-circle"></i> ประวัติการเช่า</button>
                                 <button type="button" class="btn btn-success" name="submit_bill" id="submit_bill" onclick="confirm_Alert('ยืนยันการคืนใช่หรือไม่', 'dashboard/history/submit/${data.id_history}/${price_fess_totel}/${data.id_user}')" ><i class="fas fa-check"></i></button>

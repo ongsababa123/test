@@ -45,6 +45,9 @@ class HistoryController extends BaseController
         $return_formattedDate = date('Y/m/d', strtotime($return_date));
         $cart_id = explode(',', $this->request->getVar('cart_id'));
         $this->delete_cart($cart_id);
+
+        $id_book = explode(',', $this->request->getVar('name_book_create__'));
+        $this->chage_status_book($id_book, 2);
         $data = [
             'id_user' => $this->request->getVar('name_user_create'),
             'id_book' => $this->request->getVar('name_book_create__'),
@@ -115,16 +118,20 @@ class HistoryController extends BaseController
     }
 
 
-    public function edit_retrun_date($id_history = null)
+    public function edit_history($id_history = null)
     {
         $HistoryModels = new HistoryModels();
         $inputDate = $this->request->getVar('return_date');
+        $price_late = $this->request->getVar('price_late');
+        $pice_promotion = $this->request->getVar('pice_promotion');
 
         // Format the date if needed (adjust the format according to your database requirements)
         $formattedDate = date('Y/m/d', strtotime($inputDate));
 
         $data = [
             'return_date' => $formattedDate,
+            'late_price' => $price_late,
+            'sum_price_promotion' => $pice_promotion,
         ];
         $check = $HistoryModels->update($id_history, $data);
         if ($check) {
@@ -173,6 +180,14 @@ class HistoryController extends BaseController
     {
         helper(['form']);
         $HistoryModels = new HistoryModels();
+        $UserModels = new UserModels();
+        $id_book = $HistoryModels->where('id_history', $id_history)->findAll()[0]['id_book'];
+        $bookIds = explode(',', $id_book);
+        $this->chage_status_book($bookIds, 1);
+
+        $id_user = $HistoryModels->where('id_history', $id_history)->findAll()[0]['id_user'];
+        $UserModels->update($id_user, ['status_user' => 1]);
+
         $check = $HistoryModels->where('id_history', $id_history)->delete($id_history);
         if ($check) {
             $response = [
@@ -202,7 +217,9 @@ class HistoryController extends BaseController
             'late_price' => $price,
         ];
         $UserModels->update($id_user, ['status_user' => 1]);
-
+        $id_book = $HistoryModels->where('id_history', $id_history)->findAll()[0]['id_book'];
+        $bookIds = explode(',', $id_book);
+        $this->chage_status_book($bookIds, 1);
         $check = $HistoryModels->update($id_history, $data);
         if ($check) {
             $response = [

@@ -144,7 +144,7 @@
                                 <th></th>
                                 <td></td>
                                 <td></td>
-                                <th>ราคารวม :</th>
+                                <th>ราคารวม(หักส่วนลด) :</th>
                                 <td id="sum_price"></td>
                             </tr>
                         </table>
@@ -179,7 +179,7 @@
         </div>
     </div>
 </div>
-<?= $this->include("Check_pro"); ?>
+<?= $this->include("calculate"); ?>
 <script>
 
     $("#form_create_history_cart").on('submit', function (e) {
@@ -189,8 +189,9 @@
     });
 </script>
 <script>
+    // กำหนดรูปแบบ datetimepicker
     $('.datetimepicker').datetimepicker({
-        format: 'L', // Display only the date
+        format: 'L',
         icons: {
             date: "fa fa-calendar",
             up: "fa fa-chevron-up",
@@ -200,13 +201,37 @@
             today: 'fa fa-screenshot',
             clear: 'fa fa-trash',
             close: 'fa fa-remove'
-        }
+        },
+        minDate: moment() // กำหนดให้เลือกวันที่ปัจจุบันเป็นต่ำสุด
+    });
+
+    // ตั้งค่า flag ในการตรวจสอบว่ามีการเลือก rental_date_create แล้วหรือไม่
+    var rentalDateSelected = false;
+    $('#return_date_create').data('DateTimePicker').disable();
+
+    $('#rental_date_create').on('dp.change', function (e) {
+        // ดึงข้อมูลวันที่รับหนังสือ
+        var rentalDate = e.date;
+
+        // คำนวณวันที่คืน 7 วันหลัง
+        var returnDate = rentalDate.clone().add(7, 'days');
+
+        // กำหนดค่าวันที่คืนไปยัง input ของวันที่คืน
+        $('#return_date_create').val(returnDate.format('L'));
+
+        // กำหนด minDate ของ return_date_create เป็น returnDate
+        $('#return_date_create').data('DateTimePicker').minDate(returnDate);
+
+        // ตั้งค่า flag เมื่อมีการเลือก rental_date_create
+        rentalDateSelected = true;
+        $('#return_date_create').data('DateTimePicker').enable();
+
     });
 </script>
+
 <script>
     var categoryData = <?php echo json_encode($cartData); ?>;
     var userData = <?php echo json_encode($userData); ?>;
-    console.log(userData[0].status_user);
     var cart_check = [];
     var id_book_check = '';
     var price_sum = 0;
@@ -306,7 +331,7 @@
                 $("#details_promotion").html(result.text);
             }
             $("#sum_price_promotion").html(result.price_promotion + ' ' + 'บาท');
-            $("#sum_price").html(result.price_result + ' ' + 'บาท');
+            $("#sum_price").html(result.price_result - result.price_promotion + ' ' + 'บาท');
             $(".modal-body #price_book_create").val(result.price_result);
             $(".modal-body #sumid_promotion").val(result.sumid_promotion);
             $(".modal-body #sum_price_promotion").val(result.price_promotion);
@@ -327,37 +352,46 @@
             formData.append('sumid_promotion', $('#sumid_promotion').val());
             formData.append('cart_id', $('#cart_id').val());
         }
-        $.ajax({
-            url: '<?= base_url() ?>' + url,
-            type: "POST",
-            cache: false,
-            data: formData,
-            processData: false,
-            contentType: false,
-            dataType: "JSON",
-            success: function (response) {
-                if (response.success) {
+        if (cart_check.length > '7') {
+            Swal.fire({
+                title: "การเช่าหนังสือสามารถเช่าได้แค่ 7 เล่มต่อครั้ง",
+                icon: 'error',
+                showConfirmButton: true
+            });
+        } else {
+            $.ajax({
+                url: '<?= base_url() ?>' + url,
+                type: "POST",
+                cache: false,
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: "JSON",
+                success: function (response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: response.message,
+                            icon: 'success',
+                            showConfirmButton: false,
+                            allowOutsideClick: false
+                        });
+                        setTimeout(() => {
+                            if (response.reload) {
+                                window.location.reload();
+                            }
+                        }, 2000);
+                    }
+                },
+                error: function (xhr, status, error) {
                     Swal.fire({
-                        title: response.message,
-                        icon: 'success',
-                        showConfirmButton: false,
-                        allowOutsideClick: false
+                        title: "เกิดข้อผิดพลาด",
+                        icon: 'error',
+                        showConfirmButton: true
                     });
-                    setTimeout(() => {
-                        if (response.reload) {
-                            window.location.reload();
-                        }
-                    }, 2000);
                 }
-            },
-            error: function (xhr, status, error) {
-                Swal.fire({
-                    title: "เกิดข้อผิดพลาด",
-                    icon: 'error',
-                    showConfirmButton: true
-                });
-            }
-        });
+            });
+        }
+
     }
 </script>
 <script>
