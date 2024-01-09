@@ -48,7 +48,7 @@ class UserController extends BaseController
         $UserModels = new UserModels();
         $data['data_user'] = $UserModels->find(session()->get('id_user'));
         echo view('dashboard/layout/header');
-        echo view('dashboard/profile' , $data);
+        echo view('dashboard/profile', $data);
     }
 
     public function create_user($type = null)
@@ -63,31 +63,48 @@ class UserController extends BaseController
         $number_random = mt_rand(100000, 999999);
         if ($this->validate($rules)) {
             $userModels = new UserModels();
-            $data = [
-                'email_user' => $this->request->getVar('email'),
-                'name' => $this->request->getVar('name'),
-                'lastname' => $this->request->getVar('last'),
-                'phone' => $this->request->getVar('phone'),
-                'password' => password_hash($this->request->getVar('password'), PASSWORD_DEFAULT),
-                'key_pass' => password_hash($number_random, PASSWORD_DEFAULT),
-                'status_user' => 1,
-                'type_user' => $type,
-            ];
-            $check = $userModels->save($data);
-            if ($check) {
-                $response = [
-                    'success' => true,
-                    'message' => 'สร้างข้อมูลสำเร็จ รหัส 6 หลักคุณคือ ' . $number_random . ' ใช้ในกรณีลืมรหัสผ่าน',
-                    'reload' => true,
+            $data_check = $userModels->findAll();
+            $name_create = $this->request->getVar('name');
+            $lastname_create = $this->request->getVar('last');
+            $check_Data = true;
+            foreach ($data_check as $value) {
+                if ($value['name'] == $name_create && $value['lastname'] == $lastname_create) {
+                    $check_Data = false;
+                }
+            }
+            if ($check_Data) {
+                $data = [
+                    'email_user' => $this->request->getVar('email'),
+                    'name' => $this->request->getVar('name'),
+                    'lastname' => $this->request->getVar('last'),
+                    'phone' => $this->request->getVar('phone'),
+                    'password' => password_hash($this->request->getVar('password'), PASSWORD_DEFAULT),
+                    'key_pass' => password_hash(str_replace(['.', '/'], '', $number_random), PASSWORD_DEFAULT),
+                    'status_user' => 1,
+                    'status_rental' => 1,
+                    'type_user' => $type,
                 ];
-            } else {
+                $check = $userModels->save($data);
+                if ($check) {
+                    $response = [
+                        'success' => true,
+                        'message' => 'สร้างข้อมูลสำเร็จ รหัส 6 หลักคุณคือ ' . $number_random . ' ใช้ในกรณีลืมรหัสผ่าน',
+                        'reload' => true,
+                    ];
+                } else {
+                    $response = [
+                        'success' => false,
+                        'message' => 'error',
+                        'reload' => false,
+                    ];
+                }
+            }else{
                 $response = [
                     'success' => false,
-                    'message' => 'error',
+                    'message' => 'ชื่อและนามสกุลซ้ำกันในระบบ',
                     'reload' => false,
                 ];
             }
-
         } else {
             $data['validation'] = $this->validator;
             $response = [
@@ -101,6 +118,67 @@ class UserController extends BaseController
     }
 
     public function edit_user($id_user = null)
+    {
+        helper(['form']);
+        $status = $this->request->getVar('customSwitch3') === 'on' ? 1 : 0;
+        $rules = [
+            'name' => 'required|min_length[2]|max_length[200]',
+            'last' => 'required|min_length[2]|max_length[200]',
+            'phone' => 'required|min_length[10]|max_length[10]',
+            'email' => 'required|min_length[4]|max_length[100]|valid_email|is_unique[user_table.email_user,id_user,' . $id_user . ']',
+        ];
+        $password = $this->request->getVar('password');
+
+        if ($this->validate($rules)) {
+            $userModels = new UserModels();
+            $data = [
+                'email_user' => $this->request->getVar('email'),
+                'name' => $this->request->getVar('name'),
+                'lastname' => $this->request->getVar('last'),
+                'phone' => $this->request->getVar('phone'),
+                'status_user' => $status
+            ];
+            if ($password === '' || $password === null) {
+                $response = [
+                    'success' => true,
+                    'message' => 'อัปเดตข้อมูลสำเร็จ',
+                    'reload' => true,
+                ];
+            } else {
+                $number_random = mt_rand(100000, 999999);
+                $passdata = [
+                    'password' => password_hash($password, PASSWORD_DEFAULT),
+                    'key_pass' => password_hash(str_replace(['.', '/'], '', $number_random), PASSWORD_DEFAULT),
+                ];
+                $data = array_merge($data, $passdata);
+                $response = [
+                    'success' => true,
+                    'message' => 'อัปเดตข้อมูลสำเร็จ รหัส 6 หลักใหม่คือ ' . $number_random . ' ใช้ในกรณีลืมรหัสผ่าน',
+                    'reload' => false,
+                    'pass' => $password
+                ];
+            }
+            $check = $userModels->update($id_user, $data);
+            if (!$check) {
+                $response = [
+                    'success' => false,
+                    'message' => 'error',
+                    'reload' => false,
+                ];
+            }
+        } else {
+            $data['validation'] = $this->validator;
+            $response = [
+                'success' => false,
+                'message' => 'ผิดพลาด',
+                'validator' => $this->validator->getErrors(), // Get validation errors
+                'reload' => false,
+            ];
+        }
+        return $this->response->setJSON($response);
+    }
+
+    public function edit_user_profile($id_user = null)
     {
         helper(['form']);
         $rules = [
@@ -126,6 +204,16 @@ class UserController extends BaseController
                 $data = array_merge($data, $passdata);
             }
             $check = $userModels->update($id_user, $data);
+            $session = session();
+            $data_update = $userModels->where('email_user', $this->request->getVar('email'))->first();
+            $ses_data = [
+                'id' => $data_update['id_user'],
+                'name' => $data_update['name'],
+                'lastname' => $data_update['lastname'],
+                'type' => $data_update['type_user'],
+                'isLoggedIn' => TRUE
+            ];
+            $session->set($ses_data);
             if ($check) {
                 $response = [
                     'success' => true,
@@ -216,6 +304,5 @@ class UserController extends BaseController
 
         return $this->response->setJSON($response);
     }
-
 
 }

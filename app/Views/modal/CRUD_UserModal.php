@@ -8,6 +8,17 @@
         </div>
         <div class="modal-body">
             <form class="mb-3" id="form_user" action="javascript:void(0)" method="post" enctype="multipart/form-data">
+                <div class="row" id="customSwitch_status">
+                    <div class="col-sm-12">
+                        <div class="form-group" id="customSwitch">
+                            <div class="custom-control custom-switch custom-switch-off-danger custom-switch-on-success">
+                                <input type="checkbox" class="custom-control-input" id="customSwitch3"
+                                    name="customSwitch3" onclick="change_status()">
+                                <label class="custom-control-label" for="customSwitch3" id="LabelcustomSwitch3"></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-sm-6">
                         <div class="form-group">
@@ -33,8 +44,13 @@
                     <input type="number" class="form-control" placeholder="กรอกเบอร์โทรศัพท์" id="phone" name="phone"
                         required>
                 </div>
+
                 <div class="form-group" id="password_group">
                     <label>รหัสผ่าน</label>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="exampleCheck1">
+                        <label class="form-check-label" for="exampleCheck1">เปลี่ยนรหัสผ่าน</label>
+                    </div>
                     <div class="input-group mb-3">
                         <input type="password" name="password" class="form-control" id="password"
                             placeholder="กรอกรหัสผ่าน">
@@ -49,6 +65,7 @@
         </div>
     </div>
 </div>
+<script src="<?= base_url('plugins/bs-custom-file-input/bs-custom-file-input.min.js'); ?>"></script>
 
 <script>
     $(document).ready(function () {
@@ -60,4 +77,23 @@
         const urlRouteInput = document.getElementById("url_route");
         action_(urlRouteInput.value, 'form_user');
     });
+</script>
+<script>
+    $("#exampleCheck1").on('click', function () {
+        if ($(this).is(':checked')) {
+            $("#password").prop("disabled", false);
+        } else {
+            $("#password").prop("disabled", true);
+        }
+    })
+</script>
+<script>
+    function change_status() {
+        const isChecked = document.getElementById("customSwitch3").checked;
+        if (isChecked) {
+            $(".modal-body #LabelcustomSwitch3").text("เปิดใช้งาน");
+        } else {
+            $(".modal-body #LabelcustomSwitch3").text("แบล็คลิส");
+        }
+    }
 </script>

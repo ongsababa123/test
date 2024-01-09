@@ -32,32 +32,39 @@ class LoginController extends BaseController
                 $url = '/dashboard/index';
             }
             if ($authenticatePassword) {
-                $ses_data = [
-                    'id' => $data['id_user'],
-                    'name' => $data['name'],
-                    'lastname' => $data['lastname'],
-                    'type' => $data['type_user'],
-                    'isLoggedIn' => TRUE
-                ];
-                $session->set($ses_data);
-                $response = [
-                    'success' => true,
-                    'message' => 'เข้าสู่ระบบสำเร็จ',
-                    'reload' => true,
-                    'type' => $url,
-                ];
-
+                if ($data['status_user'] === '1') {
+                    $ses_data = [
+                        'id' => $data['id_user'],
+                        'name' => $data['name'],
+                        'lastname' => $data['lastname'],
+                        'type' => $data['type_user'],
+                        'isLoggedIn' => TRUE
+                    ];
+                    $session->set($ses_data);
+                    $response = [
+                        'success' => true,
+                        'message' => 'เข้าสู่ระบบสำเร็จ',
+                        'reload' => true,
+                        'type' => $url,
+                    ];
+                }else{
+                    $response = [
+                        'success' => false,
+                        'message' => 'บัญชีผู้ใช้นี้ถูกระงับ',
+                        'reload' => false,
+                    ];
+                }
             } else {
                 $response = [
                     'success' => false,
-                    'message' => 'รหัสผ่านไม่ถูกต้อง',
+                    'message' => 'อีเมล์หรือรหัสผ่านไม่ถูกต้อง',
                     'reload' => false,
                 ];
             }
         } else {
             $response = [
                 'success' => false,
-                'message' => 'อีเมล์ไม่ถูกต้อง',
+                'message' => 'อีเมล์หรือรหัสผ่านไม่ถูกต้อง',
                 'reload' => false,
             ];
         }
@@ -108,7 +115,7 @@ class LoginController extends BaseController
                 $number_random = mt_rand(100000, 999999);
                 $data = [
                     'password' => password_hash($password, PASSWORD_DEFAULT),
-                    'key_pass' => password_hash($number_random, PASSWORD_DEFAULT),
+                    'key_pass' => password_hash(str_replace(['.', '/'], '', $number_random), PASSWORD_DEFAULT),
                 ];
                 $userModels->set($data);
                 $updated = $userModels->where('email_user', $email)->update();

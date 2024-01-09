@@ -16,7 +16,7 @@ $routes->get('/register', 'LoginController::index_Register', ['filter' => ['Cart
 $routes->get('/forgotpassword', 'LoginController::index_forgotpassword');
 $routes->match(['get', 'post'], '/checkpin', 'LoginController::checkpin');
 
-$routes->get('/resetpassword/(:any)/(:any)', 'LoginController::index_resetpassword/$1/$2');
+$routes->match(['get', 'post'], '/resetpassword/(:any)/(:any)', 'LoginController::index_resetpassword/$1/$2');
 $routes->match(['get', 'post'], '/update/resetpassword', 'LoginController::update_resetpassword');
 
 $routes->group("/", ['filter' => ['CartCheck', 'HistoryCheck']], function ($routes) {
@@ -39,6 +39,8 @@ $routes->group("/", ['filter' => ['CartCheck', 'HistoryCheck']], function ($rout
 
 $routes->group("dashboard/", ['filter' => ['CartCheck', 'HistoryCheck' , 'ISLogin']], function ($routes) {
     $routes->match(['get', 'post'], 'index', 'DashboardController::index');
+    $routes->match(['get', 'post'], 'edit/user/profile/(:num)', 'UserController::edit_user_profile/$1');  //edit
+
 });
 $routes->group("dashboard/customer/", ['filter' => ['CartCheck', 'HistoryCheck']], function ($routes) {
     $routes->match(['get', 'post'], 'index', 'UserController::customer_index', ['filter' => ['authGuard' , 'ISLogin']]); //display
@@ -89,7 +91,7 @@ $routes->group("dashboard/category/", ['filter' => ['CartCheck', 'HistoryCheck']
 $routes->group("dashboard/history/", ['filter' => ['CartCheck', 'HistoryCheck']], function ($routes) {
     $routes->match(['get', 'post'], 'index', 'HistoryController::history_index', ['filter' => ['authGuard' , 'ISLogin']]); //display
     $routes->match(['get', 'post'], 'create', 'HistoryController::create_history');   //create
-    $routes->match(['get', 'post'], 'getdata', 'HistoryController::get_data_table');  //getData
+    $routes->match(['get', 'post'], 'getdata/(:num)', 'HistoryController::get_data_table/$1');  //getData
     $routes->match(['get', 'post'], 'edit/edit_history/(:num)', 'HistoryController::edit_history/$1');  //edit
     $routes->match(['get', 'post'], 'cancel/(:num)', 'HistoryController::cancel_his/$1');  //cancel
     $routes->match(['get', 'post'], 'submit/(:num)/(:num)/(:num)', 'HistoryController::submit_his/$1/$2/$3');  //submit

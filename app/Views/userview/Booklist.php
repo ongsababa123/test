@@ -37,6 +37,7 @@
         font-weight: 600;
     }
 </style>
+
 <?php
 $sortOrder = '0'; // Set a default value
 
@@ -255,14 +256,14 @@ $filteredBooks = array_filter($bookData, function ($book) use ($searchTerm) {
 <script>
     function alert_(id_book) {
         var userData = <?php echo json_encode($userData); ?>;
-        if (userData[0]['status_user'] == 3) {
+        if (userData[0]['status_rental'] == 2) {
             Swal.fire({
-                title: "คุณมีรายการเกินกำหนด โปรดคืนหนังสือก่อน",
+                title: "คุณมีรายการเข้ารับหนังสืออยู่ โปรดคืนหนังสือก่อนเช่าใหม่อีกครั้ง",
                 icon: 'warning',
                 showConfirmButton: true
             });
-        
-        }else if(userData[0]['status_user'] == 2){
+
+        } else if (userData[0]['status_rental'] == 3) {
             Swal.fire({
                 title: "คุณกำลังเช่าหนังสืออยู่ โปรดคืนหนังสือก่อนเช่าใหม่อีกครั้ง",
                 icon: 'warning',
@@ -276,9 +277,21 @@ $filteredBooks = array_filter($bookData, function ($book) use ($searchTerm) {
                 processData: false,
                 contentType: false,
                 dataType: "JSON",
+                beforeSend: function () {
+                    // แสดงกำลังโหลด
+                    Swal.fire({
+                        title: "กำลังโหลด...",
+                        onBeforeOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                },
                 success: function (response) {
-                    var bookDiv = document.getElementById('book_' + id_book);
-                    bookDiv.style.display = 'none';
+                    // ซ่อนกำลังโหลดหลังจากที่เสร็จสิ้น
+                    Swal.close();
+
+
+
                     const Toast = Swal.mixin({
                         toast: true,
                         position: "top-end",
@@ -294,14 +307,26 @@ $filteredBooks = array_filter($bookData, function ($book) use ($searchTerm) {
                             });
                         }
                     });
+                    if (response.success) {
+                        Toast.fire({
+                            icon: "success",
+                            title: response.message
+                        });
+                        var bookDiv = document.getElementById('book_' + id_book);
+                        bookDiv.style.display = 'none';
+                    } else {
+                        Toast.fire({
+                            icon: "error",
+                            title: response.message
+                        });
+                    }
 
-                    Toast.fire({
-                        icon: "success",
-                        title: response.message
-                    });
 
                 },
                 error: function (xhr, status, error) {
+                    // ซ่อนกำลังโหลดหลังจากที่เกิดข้อผิดพลาด
+                    Swal.close();
+
                     Swal.fire({
                         title: "เกิดข้อผิดพลาด",
                         icon: 'error',
@@ -309,8 +334,8 @@ $filteredBooks = array_filter($bookData, function ($book) use ($searchTerm) {
                     });
                 }
             });
-        }
 
+        }
     }
 </script>
 <script>

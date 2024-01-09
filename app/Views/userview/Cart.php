@@ -2,12 +2,13 @@
 <link href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css" rel="stylesheet">
 <style>
     .center {
-        padding: 100px 0;
-        padding-left: 30px;
-        padding-top: 10rem;
+        padding: 5px 0;
+        padding-left: 20px;
+        padding-top: rem;
         text-align: center;
     }
 </style>
+
 <div class="main" style="background-color: #bddce5;">
     <br>
     <div class="page-header page-header-xs" data-parallax="true"
@@ -29,57 +30,41 @@
                 <?php foreach ($cartData as $cartItem): ?>
                     <div class="p-4 border mb-3" style="background-color: white;">
                         <div class="row">
-                            <div class="center">
-                                <div class="form-group">
-                                    <div class="form-check">
-                                        <label class="form-check-label">
-                                            <input class="form-check-input" type="checkbox" value="<?= $cartItem['id_cart'] ?>">
-                                            <span class="form-check-sign">
-                                                <span class="check"></span>
-                                            </span>
-                                        </label>
+                            <div class="col-lg-1">
+                                <div class="center">
+                                    <div class="form-group">
+                                        <div class="form-check">
+                                            <label class="form-check-label">
+                                                <input class="form-check-input" type="checkbox"
+                                                    value="<?= $cartItem['id_cart'] ?>">
+                                                <span class="form-check-sign">
+                                                    <span class="check"></span>
+                                                </span>
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             <?php foreach ($cartItem['bookData'] as $book): ?>
-                                <?php
-                                $imageSrc = base_url('dist/img/image-preview.png');
 
-                                if ($book['pic_book'] !== null) {
-                                    $base64Data = $book['pic_book'];
-                                    $decodedData = base64_decode($base64Data);
-                                    $imageSrc = 'data:image/png;base64,' . base64_encode($decodedData);
-                                }
-                                ?>
                             <?php endforeach; ?>
-                            <div class="col-lg-5 col-md-12 text-center">
-                                <img src="<?= $imageSrc ?>" class="img-rounded img-responsive" alt="Rounded Image"
-                                    style="height: 25rem;">
-                            </div>
-                            <div class="col-lg-6">
-                                <p style="font-size: 2vw;">
-                                    <?= $book['name_book'] ?>
-                                </p>
-                                <h6 class="description">ผู้เขียน</h6>
-                                <p class="description">
-                                    <?= $book['book_author'] ?>
-                                </p>
-                                <h6 class="description">ประเภท</h6>
-                                <p class="description">
-                                    <?php foreach ($cartItem['categoryData'] as $category): ?>
-                                        <?php
-                                        echo $category['name_category'];
-                                        ?>
-                                    <?php endforeach; ?>
-                                </p>
-                                <h6 class="description">รายละเอียด</h6>
-                                <p class="description">
-                                    <?= $book['details'] ?>
-                                </p>
-                                <h6 ราคา class="description">ราคา</h6>
-                                <?= $book['price'] ?>
-                                <h6 ราคา class="description">วันที่กดเข้าตระกร้า</h6>
-                                <?= $cartItem['cart_date'] ?>
+                            <div class="col-lg-11">
+                                <div class="row">
+                                    <div class="col-sm-7">
+                                        <h6 class="description">ชื่อหนังสือ</h6>
+                                        <p class="description">
+                                            <?= $book['name_book'] ?>
+                                        </p>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <h6 ราคา class="description">ราคาเช่า</h6>
+                                        <?= $book['price'] ?>
+                                    </div>
+                                    <div class="col-sm-2">
+                                        <h6 ราคา class="description">วันที่กดเข้าตระกร้า</h6>
+                                        <?= $cartItem['cart_date'] ?>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -91,8 +76,7 @@
                             <p id="quantity"></p>
                         </div>
                         <div class="col-lg-4 mt-2">
-                            <h6>ราคารวม : </h6>
-                            <p id="price"></p>
+
                         </div>
                         <div class="col-lg-2">
                             <button class="btn btn-primary btn-round" data-toggle="modal" data-target="#Payment"
@@ -144,7 +128,14 @@
                                 <th></th>
                                 <td></td>
                                 <td></td>
-                                <th>ราคารวม(หักส่วนลด) :</th>
+                                <th>ค่ามัดจำ :</th>
+                                <td id="sum_price_deposit"></td>
+                            </tr>
+                            <tr>
+                                <th></th>
+                                <td></td>
+                                <td></td>
+                                <th>ราคารวม(ค่ามัดจำและหักส่วนลด) :</th>
                                 <td id="sum_price"></td>
                             </tr>
                         </table>
@@ -215,13 +206,15 @@
 
         // คำนวณวันที่คืน 7 วันหลัง
         var returnDate = rentalDate.clone().add(7, 'days');
+        var today = moment();
+        var maxDate = moment(today).add(2, 'days');
 
         // กำหนดค่าวันที่คืนไปยัง input ของวันที่คืน
         $('#return_date_create').val(returnDate.format('L'));
 
         // กำหนด minDate ของ return_date_create เป็น returnDate
         $('#return_date_create').data('DateTimePicker').minDate(returnDate);
-
+        $('#rental_date_create').data('DateTimePicker').maxDate(maxDate);
         // ตั้งค่า flag เมื่อมีการเลือก rental_date_create
         rentalDateSelected = true;
         $('#return_date_create').data('DateTimePicker').enable();
@@ -278,7 +271,7 @@
                 $("#button_cancel").prop("disabled", true);
                 $("#button_modal").prop("disabled", true);
             } else {
-                if (userData[0].status_user == 2 || userData[0].status_user == 3) {
+                if (userData[0].status_rental == 2 || userData[0].status_rental == 3) {
                     $("#button_modal").prop("disabled", true);
                     $("#button_cancel").prop("disabled", false);
                 } else {
@@ -306,7 +299,7 @@
                             <th>ลำดับ : ${count}</th>
                             <th>ชื่อหนังสือ : </th>
                             <td>${element_cat.bookData[0].name_book}</td>
-                            <th>ราคา :</th>
+                            <th>ราคาเช่า :</th>
                             <td>${element_cat.bookData[0].price} บาท</td>
                         </tr>
                         `;
@@ -314,12 +307,14 @@
                 }
             });
         });
+        var price_deposit = count * 100;
+        $("#sum_price_deposit").html(price_deposit + ' ' + 'บาท');
         var row2 = `
                         <tr>
                             <th></th>
                             <th></th>
                             <td></td>
-                            <th>ราคารวม :</th>
+                            <th>ราคาเช่ารวม :</th>
                             <td>${price_sum} บาท</td>
                         </tr>
                         `;
@@ -331,7 +326,7 @@
                 $("#details_promotion").html(result.text);
             }
             $("#sum_price_promotion").html(result.price_promotion + ' ' + 'บาท');
-            $("#sum_price").html(result.price_result - result.price_promotion + ' ' + 'บาท');
+            $("#sum_price").html(((result.price_result - result.price_promotion) + price_deposit) + ' ' + 'บาท');
             $(".modal-body #price_book_create").val(result.price_result);
             $(".modal-body #sumid_promotion").val(result.sumid_promotion);
             $(".modal-body #sum_price_promotion").val(result.price_promotion);
@@ -344,20 +339,33 @@
 <script>
     function action_(url, form) {
         var formData = new FormData(document.getElementById(form));
+
+        // Show loading indicator
+        Swal.fire({
+            title: "กำลังโหลด...",
+            allowOutsideClick: false,
+            onBeforeOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
         if (id_book_check.endsWith(',')) {
             id_book_check = id_book_check.slice(0, -1);
         }
+
         if (form == 'form_create_history_cart') {
             formData.append('name_book_create__', id_book_check);
             formData.append('sumid_promotion', $('#sumid_promotion').val());
             formData.append('cart_id', $('#cart_id').val());
         }
+
         if (cart_check.length > '7') {
             Swal.fire({
                 title: "การเช่าหนังสือสามารถเช่าได้แค่ 7 เล่มต่อครั้ง",
                 icon: 'error',
                 showConfirmButton: true
             });
+            // Hide loading indicator
         } else {
             $.ajax({
                 url: '<?= base_url() ?>' + url,
@@ -367,6 +375,10 @@
                 processData: false,
                 contentType: false,
                 dataType: "JSON",
+                beforeSend: function () {
+                    // Show loading indicator
+                    Swal.showLoading();
+                },
                 success: function (response) {
                     if (response.success) {
                         Swal.fire({
@@ -388,11 +400,15 @@
                         icon: 'error',
                         showConfirmButton: true
                     });
+                },
+                complete: function () {
+                    // Hide loading indicator
+                    // Swal.close();
                 }
             });
         }
-
     }
+
 </script>
 <script>
     function confirm_Alert() {
@@ -408,6 +424,15 @@
                 formData.append('name_book_create__', id_book_check);
                 formData.append('cart_id', cart_check);
 
+                // เพิ่มกำลังโหลด
+                var loading = Swal.fire({
+                    title: 'กำลังโหลด...',
+                    allowOutsideClick: false,
+                    onBeforeOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
                 $.ajax({
                     url: '<?= base_url('dashboard/history/cartcancel') ?>',
                     type: "POST",
@@ -420,6 +445,9 @@
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 }).done(function (response) {
+                    // ปิดกำลังโหลดหลังจากทำเสร็จสิ้น
+                    loading.close();
+
                     if (response.success) {
                         Swal.fire({
                             title: response.message,
@@ -442,4 +470,5 @@
             }
         });
     }
+
 </script>
